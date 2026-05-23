@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>💧 喝水鬧鐘</title>
+<style>
+  :root {
+    --bg: #f0f7fb;
+    --card: #ffffff;
+    --primary: #2196f3;
+    --primary-dark: #1976d2;
+    --danger: #e53935;
+    --text: #263238;
+    --muted: #607d8b;
+    --border: #cfd8dc;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft JhengHei", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    margin: 0;
+    padding: 24px;
+    min-height: 100vh;
+  }
+  .container { max-width: 540px; margin: 0 auto; }
+  h1 { text-align: center; font-size: 28px; margin: 0 0 20px; }
+  .card {
+    background: var(--card);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.06);
+  }
+  h2 { font-size: 18px; margin: 0 0 16px; color: var(--primary-dark); }
+  .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; }
+  .field { flex: 1; min-width: 140px; }
+  label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 4px; }
+  input, select {
+    width: 100%;
+    padding: 8px 10px;
+    font-size: 15px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: #fff;
+  }
+  input:focus, select:focus { outline: 2px solid var(--primary); outline-offset: -1px; }
+  button {
+    padding: 10px 18px;
+    font-size: 15px;
+    font-weight: 600;
+    border: none;
+    border-radius: 6px;
+    background: var(--primary);
+    color: #fff;
+    cursor: pointer;
+    transition: background .15s;
+  }
+  button:hover:not(:disabled) { background: var(--primary-dark); }
+  button:disabled { background: #b0bec5; cursor: not-allowed; }
+  button.danger { background: var(--danger); }
+  button.danger:hover:not(:disabled) { background: #c62828; }
+  .stats { margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--border); }
+  .stat-line { display: flex; justify-content: space-between; padding: 4px 0; font-size: 14px; }
+  .stat-line strong { color: var(--primary-dark); font-size: 16px; }
+  .status {
+    text-align: center;
+    padding: 12px;
+    border-radius: 8px;
+    font-weight: 600;
+    margin-top: 12px;
+  }
+  .status.running { background: #e3f2fd; color: var(--primary-dark); }
+  .status.stopped { background: #eceff1; color: var(--muted); }
+  .log {
+    max-height: 120px;
+    overflow-y: auto;
+    font-size: 13px;
+    color: var(--muted);
+    margin-top: 8px;
+    padding: 8px;
+    background: #fafafa;
+    border-radius: 6px;
+  }
+  .log-item { padding: 2px 0; }
+  .hint { font-size: 12px; color: var(--muted); margin-top: 4px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>💧 喝水鬧鐘</h1>
+
+  <div class="card">
+    <h2>每日建議飲水量</h2>
+    <div class="row">
+      <div class="field">
+        <label for="weight">體重 (kg)</label>
+        <input type="number" id="weight" min="20" max="200" step="0.1" value="60">
+      </div>
+      <div class="field">
+        <label for="exercise">運動量</label>
+        <select id="exercise">
+          <option value="0">無 / 久坐</option>
+          <option value="350" selected>輕度（30 分鐘以內）</option>
+          <option value="600">中度（30–60 分鐘）</option>
+          <option value="900">高度（60 分鐘以上）</option>
+        </select>
+      </div>
+    </div>
+    <div class="stats">
+      <div class="stat-line">
+        <span>建議每日飲水量</span>
+        <strong><span id="dailyIntake">—</span> ml</strong>
+      </div>
+      <p class="hint">公式：體重 × 30 ml + 運動補水量</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>提醒設定</h2>
+    <div class="row">
+      <div class="field">
+        <label for="startTime">開始時間</label>
+        <input type="time" id="startTime" value="09:00">
+      </div>
+      <div class="field">
+        <label for="endTime">結束時間</label>
+        <input type="time" id="endTime" value="21:00">
+      </div>
+      <div class="field">
+        <label for="interval">提醒間隔</label>
+        <select id="interval">
+          <option value="30">每 30 分鐘</option>
+          <option value="60" selected>每 1 小時</option>
+          <option value="120">每 2 小時</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="stat-line">
+        <span>今日提醒次數</span>
+        <strong><span id="totalCount">—</span> 次</strong>
+      </div>
+      <div class="stat-line">
+        <span>每次應喝</span>
+        <strong><span id="perDose">—</span> ml</strong>
+      </div>
+      <div class="stat-line">
+        <span>下次提醒</span>
+        <strong id="nextTime">—</strong>
+      </div>
+    </div>
+
+    <div style="margin-top: 16px; display: flex; gap: 8px;">
+      <button id="startBtn" style="flex:1;">開始提醒</button>
+      <button id="stopBtn" class="danger" disabled style="flex:1;">停止</button>
+    </div>
+
+    <div id="status" class="status stopped">尚未啟動</div>
+
+    <div class="log" id="log"></div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const weightEl = $('weight');
+  const exerciseEl = $('exercise');
+  const startTimeEl = $('startTime');
+  const endTimeEl = $('endTime');
+  const intervalEl = $('interval');
+  const dailyIntakeEl = $('dailyIntake');
+  const totalCountEl = $('totalCount');
+  const perDoseEl = $('perDose');
+  const nextTimeEl = $('nextTime');
+  const startBtn = $('startBtn');
+  const stopBtn = $('stopBtn');
+  const statusEl = $('status');
+  const logEl = $('log');
+
+  const STORAGE_KEY = 'water-reminder-settings';
+  let timerId = null;
+  let scheduleList = [];
+
+  // ---------- helpers ----------
+  const parseTime = (str) => {
+    const [h, m] = str.split(':').map(Number);
+    const d = new Date();
+    d.setHours(h, m, 0, 0);
+    return d;
+  };
+
+  const fmtTime = (d) => d.toTimeString().slice(0, 5);
+
+  const log = (msg) => {
+    const item = document.createElement('div');
+    item.className = 'log-item';
+    item.textContent = `[${fmtTime(new Date())}] ${msg}`;
+    logEl.prepend(item);
+    while (logEl.children.length > 30) logEl.removeChild(logEl.lastChild);
+  };
+
+  // ---------- daily intake ----------
+  const calcDailyIntake = () => {
+    const w = parseFloat(weightEl.value) || 0;
+    const ex = parseInt(exerciseEl.value, 10) || 0;
+    return Math.round(w * 30 + ex);
+  };
+
+  // ---------- schedule ----------
+  const buildSchedule = () => {
+    const start = parseTime(startTimeEl.value);
+    const end = parseTime(endTimeEl.value);
+    const interval = parseInt(intervalEl.value, 10);
+    if (end <= start) return [];
+    const list = [];
+    const cur = new Date(start);
+    while (cur <= end) {
+      list.push(new Date(cur));
+      cur.setMinutes(cur.getMinutes() + interval);
+    }
+    return list;
+  };
+
+  const refreshStats = () => {
+    const daily = calcDailyIntake();
+    dailyIntakeEl.textContent = daily;
+    const schedule = buildSchedule();
+    totalCountEl.textContent = schedule.length || '—';
+    perDoseEl.textContent = schedule.length > 0 ? Math.round(daily / schedule.length) : '—';
+  };
+
+  // ---------- notification ----------
+  const notify = (title, body) => {
+    if ('Notification' in window && Notification.permission === 'granted') {
+      const n = new Notification(title, { body, icon: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y="80" font-size="80">💧</text></svg>' });
+      setTimeout(() => n.close(), 8000);
+    }
+    // audio beep fallback / supplement
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.frequency.value = 880;
+      gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.2, ctx.currentTime + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.6);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.6);
+    } catch (e) { /* ignore */ }
+  };
+
+  // ---------- runner ----------
+  const scheduleNext = () => {
+    const now = new Date();
+    const upcoming = scheduleList.find((t) => t > now);
+    if (!upcoming) {
+      nextTimeEl.textContent = '今日已結束';
+      statusEl.className = 'status stopped';
+      statusEl.textContent = '今日所有提醒已完成';
+      stopBtn.disabled = true;
+      startBtn.disabled = false;
+      timerId = null;
+      log('今日提醒全部完成');
+      return;
+    }
+    nextTimeEl.textContent = fmtTime(upcoming);
+    const delay = upcoming - now;
+    timerId = setTimeout(() => {
+      const perDose = perDoseEl.textContent;
+      notify('💧 該喝水囉！', `這個時段請喝 ${perDose} ml`);
+      log(`提醒：${fmtTime(upcoming)} 喝 ${perDose} ml`);
+      scheduleNext();
+    }, delay);
+  };
+
+  const start = async () => {
+    refreshStats();
+    scheduleList = buildSchedule();
+    if (scheduleList.length === 0) {
+      alert('結束時間需晚於開始時間');
+      return;
+    }
+    if ('Notification' in window && Notification.permission === 'default') {
+      const perm = await Notification.requestPermission();
+      if (perm !== 'granted') {
+        log('未授權通知，將僅以聲音提醒');
+      }
+    }
+    saveSettings();
+    startBtn.disabled = true;
+    stopBtn.disabled = false;
+    statusEl.className = 'status running';
+    statusEl.textContent = '運行中…請保持此分頁開啟';
+    log(`已啟動，共 ${scheduleList.length} 次提醒`);
+    scheduleNext();
+  };
+
+  const stop = () => {
+    if (timerId) { clearTimeout(timerId); timerId = null; }
+    startBtn.disabled = false;
+    stopBtn.disabled = true;
+    statusEl.className = 'status stopped';
+    statusEl.textContent = '已停止';
+    nextTimeEl.textContent = '—';
+    log('已手動停止');
+  };
+
+  // ---------- persistence ----------
+  const saveSettings = () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      weight: weightEl.value,
+      exercise: exerciseEl.value,
+      startTime: startTimeEl.value,
+      endTime: endTimeEl.value,
+      interval: intervalEl.value,
+    }));
+  };
+
+  const loadSettings = () => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      const s = JSON.parse(raw);
+      if (s.weight) weightEl.value = s.weight;
+      if (s.exercise) exerciseEl.value = s.exercise;
+      if (s.startTime) startTimeEl.value = s.startTime;
+      if (s.endTime) endTimeEl.value = s.endTime;
+      if (s.interval) intervalEl.value = s.interval;
+    } catch (e) { /* ignore */ }
+  };
+
+  // ---------- wire up ----------
+  [weightEl, exerciseEl, startTimeEl, endTimeEl, intervalEl].forEach((el) => {
+    el.addEventListener('change', () => { refreshStats(); saveSettings(); });
+    el.addEventListener('input', refreshStats);
+  });
+  startBtn.addEventListener('click', start);
+  stopBtn.addEventListener('click', stop);
+
+  loadSettings();
+  refreshStats();
+})();
+</script>
+</body>
+</html>
