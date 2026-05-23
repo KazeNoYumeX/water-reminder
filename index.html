@@ -85,6 +85,36 @@
   }
   .log-item { padding: 2px 0; }
   .hint { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .perm-row {
+    display: flex; gap: 8px; align-items: center;
+    margin-top: 12px; padding: 10px 12px;
+    background: #fafafa; border-radius: 6px; font-size: 13px;
+  }
+  .perm-row .perm-state { flex: 1; }
+  .perm-row button { padding: 6px 12px; font-size: 13px; }
+  .perm-state .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-weight: 600; font-size: 12px;
+  }
+  .badge.granted { background: #c8e6c9; color: #2e7d32; }
+  .badge.denied  { background: #ffcdd2; color: #c62828; }
+  .badge.default { background: #ffe0b2; color: #ef6c00; }
+
+  #toast {
+    position: fixed; top: 24px; left: 50%; transform: translateX(-50%);
+    background: var(--primary); color: #fff; padding: 16px 24px;
+    border-radius: 12px; font-size: 18px; font-weight: 700;
+    box-shadow: 0 8px 24px rgba(0,0,0,.25);
+    display: none; z-index: 9999; cursor: pointer;
+    max-width: 90%; text-align: center;
+    animation: pop .25s ease-out;
+  }
+  #toast.show { display: block; }
+  #toast small { display: block; font-size: 13px; font-weight: 400; margin-top: 4px; opacity: .9; }
+  @keyframes pop {
+    from { transform: translate(-50%, -10px); opacity: 0; }
+    to   { transform: translate(-50%, 0); opacity: 1; }
+  }
 </style>
 </head>
 <body>
@@ -160,9 +190,20 @@
 
     <div id="status" class="status stopped">尚未啟動</div>
 
+    <div class="perm-row">
+      <div class="perm-state">
+        通知權限：<span id="permBadge" class="badge default">未授權</span>
+      </div>
+      <button id="permBtn" type="button">授權通知</button>
+      <button id="testBtn" type="button">測試</button>
+    </div>
+    <p class="hint" id="permHint">提示：macOS 需另外在「系統設定 → 通知」中允許瀏覽器顯示通知，並關閉「專注模式」。</p>
+
     <div class="log" id="log"></div>
   </div>
 </div>
+
+<div id="toast" role="alert"></div>
 
 <script>
 (() => {
@@ -180,6 +221,10 @@
   const stopBtn = $('stopBtn');
   const statusEl = $('status');
   const logEl = $('log');
+  const permBadge = $('permBadge');
+  const permBtn = $('permBtn');
+  const testBtn = $('testBtn');
+  const toastEl = $('toast');
 
   const STORAGE_KEY = 'water-reminder-settings';
   let timerId = null;
@@ -234,24 +279,85 @@
   };
 
   // ---------- notification ----------
-  const notify = (title, body) => {
-    if ('Notification' in window && Notification.permission === 'granted') {
-      const n = new Notification(title, { body, icon: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y="80" font-size="80">💧</text></svg>' });
-      setTimeout(() => n.close(), 8000);
+  const updatePermBadge = () => {
+    if (!('Notification' in window)) {
+      permBadge.textContent = '不支援';
+      permBadge.className = 'badge denied';
+      permBtn.disabled = true;
+      return;
     }
-    // audio beep fallback / supplement
+    const p = Notification.permission;
+    permBadge.className = `badge ${p}`;
+    permBadge.textContent = p === 'granted' ? '已授權' : p === 'denied' ? '已封鎖' : '未授權';
+    permBtn.disabled = p === 'granted';
+    permBtn.textContent = p === 'denied' ? '已被封鎖' : '授權通知';
+  };
+
+  const requestPerm = async () => {
+    if (!('Notification' in window)) return;
+    if (Notification.permission === 'default') {
+      await Notification.requestPermission();
+    } else if (Notification.permission === 'denied') {
+      alert('通知已被瀏覽器封鎖。\n請點網址列左側的鎖頭圖示 → 通知 → 允許，再重新整理頁面。');
+    }
+    updatePermBadge();
+  };
+
+  const showToast = (title, body) => {
+    toastEl.innerHTML = `${title}<small>${body}</small>`;
+    toastEl.classList.add('show');
+    toastEl.onclick = () => toastEl.classList.remove('show');
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(() => toastEl.classList.remove('show'), 30000);
+  };
+
+  const beep = () => {
     try {
       const ctx = new (window.AudioContext || window.webkitAudioContext)();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain); gain.connect(ctx.destination);
-      osc.frequency.value = 880;
-      gain.gain.setValueAtTime(0.0001, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.2, ctx.currentTime + 0.01);
-      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.6);
-      osc.start();
-      osc.stop(ctx.currentTime + 0.6);
+      const now = ctx.currentTime;
+      // 5 connected "ding" tones over ~4 seconds, alternating pitches
+      const notes = [
+        { t: 0.0, f: 880 },
+        { t: 0.9, f: 988 },
+        { t: 1.8, f: 880 },
+        { t: 2.7, f: 988 },
+        { t: 3.6, f: 1175 },
+      ];
+      const master = ctx.createGain();
+      master.gain.value = 0.3;
+      master.connect(ctx.destination);
+      notes.forEach(({ t, f }) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = f;
+        osc.connect(gain); gain.connect(master);
+        gain.gain.setValueAtTime(0.0001, now + t);
+        gain.gain.exponentialRampToValueAtTime(1.0, now + t + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + t + 0.7);
+        osc.start(now + t);
+        osc.stop(now + t + 0.75);
+      });
     } catch (e) { /* ignore */ }
+  };
+
+  const notify = (title, body) => {
+    if ('Notification' in window && Notification.permission === 'granted') {
+      try {
+        const n = new Notification(title, {
+          body,
+          icon: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y="80" font-size="80">💧</text></svg>',
+          tag: 'water-reminder',
+          requireInteraction: true,
+        });
+        n.onclick = () => { window.focus(); n.close(); };
+      } catch (e) { /* ignore */ }
+    }
+    showToast(title, body);
+    beep();
+    if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+    document.title = `🔔 ${title}`;
+    setTimeout(() => { document.title = '💧 喝水鬧鐘'; }, 30000);
   };
 
   // ---------- runner ----------
@@ -341,9 +447,14 @@
   });
   startBtn.addEventListener('click', start);
   stopBtn.addEventListener('click', stop);
+  permBtn.addEventListener('click', requestPerm);
+  testBtn.addEventListener('click', () => {
+    notify('💧 測試通知', '若你看不到系統通知，請檢查瀏覽器與 macOS 設定');
+  });
 
   loadSettings();
   refreshStats();
+  updatePermBadge();
 })();
 </script>
 </body>
