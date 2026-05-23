@@ -240,8 +240,12 @@
   const voiceEl = $('voice');
 
   const STORAGE_KEY = 'water-reminder-settings';
-  let timerId = null;
+  const POLL_INTERVAL_MS = 20000;
+  let pollerId = null;
   let scheduleList = [];
+  let firedKeys = new Set();
+
+  const keyOf = (d) => d.getTime();
 
   // ---------- helpers ----------
   const parseTime = (str) => {
@@ -419,27 +423,31 @@
   };
 
   // ---------- runner ----------
-  const scheduleNext = () => {
+  // Poll-based scheduler: robust against system sleep. setTimeout for long
+  // delays is unreliable when the OS sleeps (timer may drift or be skipped),
+  // so we periodically scan the schedule and fire anything due that hasn't
+  // been fired yet. Missed reminders during sleep fire on the next tick.
+  const tick = () => {
     const now = new Date();
-    const upcoming = scheduleList.find((t) => t > now);
-    if (!upcoming) {
+    const due = scheduleList.find((t) => t <= now && !firedKeys.has(keyOf(t)));
+    if (due) {
+      firedKeys.add(keyOf(due));
+      const perDose = perDoseEl.textContent;
+      notify('💧 該喝水囉！', `這個時段請喝 ${perDose} ml`);
+      log(`提醒：${fmtTime(due)} 喝 ${perDose} ml`);
+    }
+    const upcoming = scheduleList.find((t) => t > now && !firedKeys.has(keyOf(t)));
+    if (upcoming) {
+      nextTimeEl.textContent = fmtTime(upcoming);
+    } else if (firedKeys.size >= scheduleList.length) {
       nextTimeEl.textContent = '今日已結束';
       statusEl.className = 'status stopped';
       statusEl.textContent = '今日所有提醒已完成';
       stopBtn.disabled = true;
       startBtn.disabled = false;
-      timerId = null;
+      if (pollerId) { clearInterval(pollerId); pollerId = null; }
       log('今日提醒全部完成');
-      return;
     }
-    nextTimeEl.textContent = fmtTime(upcoming);
-    const delay = upcoming - now;
-    timerId = setTimeout(() => {
-      const perDose = perDoseEl.textContent;
-      notify('💧 該喝水囉！', `這個時段請喝 ${perDose} ml`);
-      log(`提醒：${fmtTime(upcoming)} 喝 ${perDose} ml`);
-      scheduleNext();
-    }, delay);
   };
 
   const start = async () => {
@@ -456,16 +464,19 @@
       }
     }
     saveSettings();
+    firedKeys = new Set();
     startBtn.disabled = true;
     stopBtn.disabled = false;
     statusEl.className = 'status running';
     statusEl.textContent = '運行中…請保持此分頁開啟';
     log(`已啟動，共 ${scheduleList.length} 次提醒`);
-    scheduleNext();
+    tick();
+    if (pollerId) clearInterval(pollerId);
+    pollerId = setInterval(tick, POLL_INTERVAL_MS);
   };
 
   const stop = () => {
-    if (timerId) { clearTimeout(timerId); timerId = null; }
+    if (pollerId) { clearInterval(pollerId); pollerId = null; }
     startBtn.disabled = false;
     stopBtn.disabled = true;
     statusEl.className = 'status stopped';
