@@ -523,6 +523,26 @@
     log('已手動停止');
   };
 
+  // Rebuild the active schedule when the user changes startTime/endTime/
+  // interval mid-run. Without this the UI would update (totalCount, perDose)
+  // but the running scheduleList would stay stale, silently ignoring the
+  // change. Past entries are pre-filled into firedKeys to avoid re-firing.
+  const rebuildIfRunning = () => {
+    if (!pollerId) return;
+    const next = buildSchedule();
+    if (next.length === 0) {
+      log('設定無效（結束時間需晚於開始時間），已停止');
+      stop();
+      return;
+    }
+    const now = new Date();
+    scheduleList = next;
+    firedKeys = new Set(scheduleList.filter((t) => t <= now).map(keyOf));
+    const upcoming = scheduleList.find((t) => t > now);
+    nextTimeEl.textContent = upcoming ? fmtTime(upcoming) : '今日已結束';
+    log(`設定已變更，重建排程：剩 ${scheduleList.length - firedKeys.size} 次`);
+  };
+
   // ---------- persistence ----------
   const saveSettings = () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
@@ -552,8 +572,14 @@
   };
 
   // ---------- wire up ----------
-  [weightEl, exerciseEl, startTimeEl, endTimeEl, intervalEl].forEach((el) => {
+  // weight/exercise only affect the dose calculation, not the schedule
+  // shape, so they don't need to trigger a rebuild.
+  [weightEl, exerciseEl].forEach((el) => {
     el.addEventListener('change', () => { refreshStats(); saveSettings(); });
+    el.addEventListener('input', refreshStats);
+  });
+  [startTimeEl, endTimeEl, intervalEl].forEach((el) => {
+    el.addEventListener('change', () => { refreshStats(); saveSettings(); rebuildIfRunning(); });
     el.addEventListener('input', refreshStats);
   });
   [phraseEl, voiceEl].forEach((el) => el.addEventListener('change', saveSettings));
