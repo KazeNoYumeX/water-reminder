@@ -248,9 +248,9 @@
   const keyOf = (d) => d.getTime();
 
   // ---------- helpers ----------
-  const parseTime = (str) => {
+  const parseTime = (str, ref = new Date()) => {
     const [h, m] = str.split(':').map(Number);
-    const d = new Date();
+    const d = new Date(ref);
     d.setHours(h, m, 0, 0);
     return d;
   };
@@ -273,9 +273,9 @@
   };
 
   // ---------- schedule ----------
-  const buildSchedule = () => {
-    const start = parseTime(startTimeEl.value);
-    const end = parseTime(endTimeEl.value);
+  const buildSchedule = (anchor = new Date()) => {
+    const start = parseTime(startTimeEl.value, anchor);
+    const end = parseTime(endTimeEl.value, anchor);
     const interval = parseInt(intervalEl.value, 10);
     if (end <= start) return [];
     const list = [];
@@ -440,13 +440,25 @@
     if (upcoming) {
       nextTimeEl.textContent = fmtTime(upcoming);
     } else if (firedKeys.size >= scheduleList.length) {
-      nextTimeEl.textContent = '今日已結束';
-      statusEl.className = 'status stopped';
-      statusEl.textContent = '今日所有提醒已完成';
-      stopBtn.disabled = true;
-      startBtn.disabled = false;
-      if (pollerId) { clearInterval(pollerId); pollerId = null; }
-      log('今日提醒全部完成');
+      // All today's reminders fired — roll the schedule forward to the next
+      // day so the user doesn't have to restart every morning.
+      const tomorrow = new Date(now);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const nextDay = buildSchedule(tomorrow);
+      if (nextDay.length > 0) {
+        scheduleList = nextDay;
+        firedKeys = new Set();
+        nextTimeEl.textContent = fmtTime(scheduleList[0]);
+        log(`今日完成，已自動排定明日 ${scheduleList.length} 次提醒`);
+      } else {
+        nextTimeEl.textContent = '今日已結束';
+        statusEl.className = 'status stopped';
+        statusEl.textContent = '今日所有提醒已完成';
+        stopBtn.disabled = true;
+        startBtn.disabled = false;
+        if (pollerId) { clearInterval(pollerId); pollerId = null; }
+        log('今日提醒全部完成');
+      }
     }
   };
 
