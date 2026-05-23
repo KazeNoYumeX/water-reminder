@@ -462,6 +462,18 @@
     }
   };
 
+  // Safari requires speechSynthesis to be primed inside a user gesture, or
+  // subsequent .speak() calls triggered by timers are silently ignored.
+  // Speak an empty utterance at zero volume on Start to unlock the API.
+  const primeTTS = () => {
+    if (!('speechSynthesis' in window)) return;
+    try {
+      const u = new SpeechSynthesisUtterance(' ');
+      u.volume = 0;
+      speechSynthesis.speak(u);
+    } catch (e) { /* ignore */ }
+  };
+
   const start = async () => {
     refreshStats();
     scheduleList = buildSchedule();
@@ -475,6 +487,7 @@
         log('未授權通知，將僅以聲音提醒');
       }
     }
+    primeTTS();
     saveSettings();
     firedKeys = new Set();
     startBtn.disabled = true;
