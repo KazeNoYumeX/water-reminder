@@ -321,7 +321,11 @@
   };
 
   const showToast = (title, body) => {
-    toastEl.innerHTML = `${title}<small>${body}</small>`;
+    toastEl.textContent = '';
+    toastEl.append(title);
+    const small = document.createElement('small');
+    small.textContent = body;
+    toastEl.append(small);
     toastEl.classList.add('show');
     toastEl.onclick = () => toastEl.classList.remove('show');
     clearTimeout(showToast._t);
