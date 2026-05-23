@@ -168,6 +168,17 @@
       </div>
     </div>
 
+    <div class="row" style="margin-top: 12px;">
+      <div class="field" style="flex: 2;">
+        <label for="phrase">提醒語句</label>
+        <input type="text" id="phrase" value="該喝水了" maxlength="40" placeholder="例如：該喝水了、補水時間到">
+      </div>
+      <div class="field">
+        <label for="voice">語音</label>
+        <select id="voice"></select>
+      </div>
+    </div>
+
     <div class="stats">
       <div class="stat-line">
         <span>今日提醒次數</span>
@@ -225,6 +236,8 @@
   const permBtn = $('permBtn');
   const testBtn = $('testBtn');
   const toastEl = $('toast');
+  const phraseEl = $('phrase');
+  const voiceEl = $('voice');
 
   const STORAGE_KEY = 'water-reminder-settings';
   let timerId = null;
@@ -311,32 +324,77 @@
     showToast._t = setTimeout(() => toastEl.classList.remove('show'), 30000);
   };
 
+  // Prefer natural-sounding Chinese voices over the system default robotic ones.
+  // Apple's "美佳/Mei-Jia" (zh-TW) and "Sinji/Sin-ji" (zh-HK) sound more natural than "Ting-Ting".
+  // Auto-pick order: Google zh-TW (Chrome/Edge) > Apple natural zh-TW/HK > others.
+  // Safari has no Google voices, so it falls through to Apple voices.
+  const VOICE_PRIORITY = [
+    (v) => /^zh[-_]TW$/i.test(v.lang) && /google/i.test(v.name),  // Google 國語（臺灣）
+    (v) => /^zh[-_](HK|CN)$/i.test(v.lang) && /google/i.test(v.name),
+    (v) => /mei[-_ ]?jia|美佳/i.test(v.name),                       // Apple 美佳 zh-TW
+    (v) => /li[-_ ]?mu|黎慕/i.test(v.name),                         // Apple 黎慕 (Siri)
+    (v) => /yu[-_ ]?shu|語舒/i.test(v.name),                        // Apple 語舒 (Siri)
+    (v) => /sin[-_ ]?ji/i.test(v.name),                            // Apple Sin-ji zh-HK
+    (v) => /microsoft.*(hsiaochen|hsiaoyu|yating)/i.test(v.name),  // Microsoft Edge zh-TW
+  ];
+
+  const pickVoice = (voices) => {
+    for (const test of VOICE_PRIORITY) {
+      const m = voices.find(test);
+      if (m) return m;
+    }
+    return voices.find((v) => /zh[-_]TW/i.test(v.lang))
+        || voices.find((v) => /^zh/i.test(v.lang))
+        || null;
+  };
+
+  const populateVoiceList = () => {
+    if (!('speechSynthesis' in window)) return;
+    const voices = speechSynthesis.getVoices().filter((v) => /^zh/i.test(v.lang));
+    if (voices.length === 0) return;
+    const saved = voiceEl.value;
+    voiceEl.innerHTML = '<option value="">自動挑選</option>'
+      + voices.map((v) => `<option value="${v.voiceURI}">${v.name} (${v.lang})</option>`).join('');
+    if (saved) voiceEl.value = saved;
+  };
+
+  const speak = (text) => {
+    try {
+      if (!('speechSynthesis' in window)) return false;
+      speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = 'zh-TW';
+      u.rate = 0.95;
+      u.pitch = 1.0;
+      u.volume = 1;
+      const voices = speechSynthesis.getVoices();
+      const chosen = voiceEl.value
+        ? voices.find((v) => v.voiceURI === voiceEl.value)
+        : pickVoice(voices);
+      if (chosen) u.voice = chosen;
+      speechSynthesis.speak(u);
+      return true;
+    } catch (e) { return false; }
+  };
+
   const beep = () => {
+    const phrase = (phraseEl.value || '該喝水囉').trim();
+    if (speak(phrase)) return;
+    // fallback: short two-tone chime if TTS unavailable
     try {
       const ctx = new (window.AudioContext || window.webkitAudioContext)();
       const now = ctx.currentTime;
-      // 5 connected "ding" tones over ~4 seconds, alternating pitches
-      const notes = [
-        { t: 0.0, f: 880 },
-        { t: 0.9, f: 988 },
-        { t: 1.8, f: 880 },
-        { t: 2.7, f: 988 },
-        { t: 3.6, f: 1175 },
-      ];
-      const master = ctx.createGain();
-      master.gain.value = 0.3;
-      master.connect(ctx.destination);
-      notes.forEach(({ t, f }) => {
+      [{ t: 0.0, f: 880 }, { t: 0.25, f: 1175 }].forEach(({ t, f }) => {
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
         osc.type = 'sine';
         osc.frequency.value = f;
-        osc.connect(gain); gain.connect(master);
+        osc.connect(gain); gain.connect(ctx.destination);
         gain.gain.setValueAtTime(0.0001, now + t);
-        gain.gain.exponentialRampToValueAtTime(1.0, now + t + 0.02);
-        gain.gain.exponentialRampToValueAtTime(0.0001, now + t + 0.7);
+        gain.gain.exponentialRampToValueAtTime(0.3, now + t + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + t + 0.4);
         osc.start(now + t);
-        osc.stop(now + t + 0.75);
+        osc.stop(now + t + 0.45);
       });
     } catch (e) { /* ignore */ }
   };
@@ -424,6 +482,8 @@
       startTime: startTimeEl.value,
       endTime: endTimeEl.value,
       interval: intervalEl.value,
+      phrase: phraseEl.value,
+      voice: voiceEl.value,
     }));
   };
 
@@ -437,6 +497,8 @@
       if (s.startTime) startTimeEl.value = s.startTime;
       if (s.endTime) endTimeEl.value = s.endTime;
       if (s.interval) intervalEl.value = s.interval;
+      if (s.phrase) phraseEl.value = s.phrase;
+      if (s.voice) voiceEl.dataset.preferred = s.voice;
     } catch (e) { /* ignore */ }
   };
 
@@ -445,6 +507,7 @@
     el.addEventListener('change', () => { refreshStats(); saveSettings(); });
     el.addEventListener('input', refreshStats);
   });
+  [phraseEl, voiceEl].forEach((el) => el.addEventListener('change', saveSettings));
   startBtn.addEventListener('click', start);
   stopBtn.addEventListener('click', stop);
   permBtn.addEventListener('click', requestPerm);
@@ -455,6 +518,17 @@
   loadSettings();
   refreshStats();
   updatePermBadge();
+
+  if ('speechSynthesis' in window) {
+    populateVoiceList();
+    speechSynthesis.onvoiceschanged = () => {
+      populateVoiceList();
+      const pref = voiceEl.dataset.preferred;
+      if (pref && [...voiceEl.options].some((o) => o.value === pref)) {
+        voiceEl.value = pref;
+      }
+    };
+  }
 })();
 </script>
 </body>
