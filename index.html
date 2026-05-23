@@ -407,6 +407,9 @@
     } catch (e) { /* ignore */ }
   };
 
+  const DEFAULT_TITLE = '💧 喝水鬧鐘';
+  let titleResetTimer = null;
+
   const notify = (title, body) => {
     if ('Notification' in window && Notification.permission === 'granted') {
       try {
@@ -423,7 +426,8 @@
     beep();
     if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
     document.title = `🔔 ${title}`;
-    setTimeout(() => { document.title = '💧 喝水鬧鐘'; }, 30000);
+    clearTimeout(titleResetTimer);
+    titleResetTimer = setTimeout(() => { document.title = DEFAULT_TITLE; }, 30000);
   };
 
   // ---------- runner ----------
