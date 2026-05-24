@@ -502,12 +502,17 @@
     }
     primeTTS();
     saveSettings();
-    firedKeys = new Set();
+    // Mark already-past entries as fired so we don't backfill old reminders
+    // when the user starts mid-day (e.g. starting at 17:23 shouldn't replay
+    // 09:00, 10:00 …). Same approach as rebuildIfRunning().
+    const now = new Date();
+    firedKeys = new Set(scheduleList.filter((t) => t <= now).map(keyOf));
+    const remaining = scheduleList.length - firedKeys.size;
     startBtn.disabled = true;
     stopBtn.disabled = false;
     statusEl.className = 'status running';
     statusEl.textContent = '運行中…請保持此分頁開啟';
-    log(`已啟動，共 ${scheduleList.length} 次提醒`);
+    log(`已啟動，今日剩 ${remaining} / ${scheduleList.length} 次提醒`);
     tick();
     if (pollerId) clearInterval(pollerId);
     pollerId = setInterval(tick, POLL_INTERVAL_MS);
