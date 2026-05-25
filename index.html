@@ -108,6 +108,13 @@
   .badge.denied  { background: #ffcdd2; color: #c62828; }
   .badge.default { background: #ffe0b2; color: #ef6c00; }
 
+  .mute-toggle {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 14px; color: var(--text); cursor: pointer;
+    padding: 8px 10px; background: #fafafa; border-radius: 6px; width: 100%;
+  }
+  .mute-toggle input { width: auto; }
+
   #toast {
     position: fixed; top: 24px; left: 50%; transform: translateX(-50%);
     background: var(--primary); color: #fff; padding: 16px 24px;
@@ -187,6 +194,13 @@
       </div>
     </div>
 
+    <div class="row" style="margin-top: 12px;">
+      <label class="mute-toggle">
+        <input type="checkbox" id="mute">
+        <span>靜音模式（不播放語音與提示音，仍會顯示桌面通知與 toast）</span>
+      </label>
+    </div>
+
     <div class="stats">
       <div class="stat-line">
         <span>今日提醒次數</span>
@@ -246,6 +260,7 @@
   const toastEl = $('toast');
   const phraseEl = $('phrase');
   const voiceEl = $('voice');
+  const muteEl = $('mute');
 
   const STORAGE_KEY = 'water-reminder-settings';
   const POLL_INTERVAL_MS = 20000;
@@ -394,6 +409,7 @@
   };
 
   const beep = () => {
+    if (muteEl.checked) return;
     const phrase = (phraseEl.value || '該喝水囉').trim();
     if (speak(phrase)) return;
     // fallback: short two-tone chime if TTS unavailable
@@ -558,6 +574,7 @@
       interval: intervalEl.value,
       phrase: phraseEl.value,
       voice: voiceEl.value,
+      mute: muteEl.checked,
     }));
   };
 
@@ -573,6 +590,7 @@
       if (s.interval) intervalEl.value = s.interval;
       if (s.phrase) phraseEl.value = s.phrase;
       if (s.voice) voiceEl.dataset.preferred = s.voice;
+      if (typeof s.mute === 'boolean') muteEl.checked = s.mute;
     } catch (e) { /* ignore */ }
   };
 
@@ -587,7 +605,7 @@
     el.addEventListener('change', () => { refreshStats(); saveSettings(); rebuildIfRunning(); });
     el.addEventListener('input', refreshStats);
   });
-  [phraseEl, voiceEl].forEach((el) => el.addEventListener('change', saveSettings));
+  [phraseEl, voiceEl, muteEl].forEach((el) => el.addEventListener('change', saveSettings));
   startBtn.addEventListener('click', start);
   stopBtn.addEventListener('click', stop);
   permBtn.addEventListener('click', requestPerm);
