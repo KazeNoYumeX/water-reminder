@@ -434,10 +434,20 @@
   const DEFAULT_TITLE = '喝水鬧鐘';
   let titleResetTimer = null;
 
+  const resetTitle = () => {
+    clearTimeout(titleResetTimer);
+    titleResetTimer = null;
+    document.title = DEFAULT_TITLE;
+  };
+
+  // System Notification already renders the icon, so strip the leading
+  // emoji from the title to avoid showing the droplet twice.
+  const stripLeadingEmoji = (s) => s.replace(/^\s*\p{Extended_Pictographic}\s*/u, '');
+
   const notify = (title, body) => {
     if ('Notification' in window && Notification.permission === 'granted') {
       try {
-        const n = new Notification(title, {
+        const n = new Notification(stripLeadingEmoji(title), {
           body,
           icon: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y="80" font-size="80">💧</text></svg>',
           tag: 'water-reminder',
@@ -451,8 +461,15 @@
     if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
     document.title = `🔔 ${title}`;
     clearTimeout(titleResetTimer);
-    titleResetTimer = setTimeout(() => { document.title = DEFAULT_TITLE; }, 30000);
+    titleResetTimer = setTimeout(resetTitle, 30000);
   };
+
+  // Background tabs throttle setTimeout, so the 30s reset can lag.
+  // When the user comes back to the tab they've clearly seen the reminder —
+  // clear the alert title immediately.
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && titleResetTimer) resetTitle();
+  });
 
   // ---------- runner ----------
   // Poll-based scheduler: robust against system sleep. setTimeout for long
