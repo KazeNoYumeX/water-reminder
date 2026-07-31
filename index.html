@@ -580,8 +580,9 @@
     document.title = t('appTitle');
   };
 
-  // System Notification already renders the icon, so strip the leading
-  // emoji from the title to avoid showing the droplet twice.
+  // Both the system Notification and the browser tab already render an icon
+  // (the notification icon / the favicon), so strip the leading emoji from
+  // the title in both places to avoid stacking droplets next to them.
   const stripLeadingEmoji = (s) => s.replace(/^\s*\p{Extended_Pictographic}\s*/u, '');
 
   const notify = (title, body) => {
@@ -599,7 +600,7 @@
     showToast(title, body);
     beep();
     if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
-    document.title = `🔔 ${title}`;
+    document.title = `🔔 ${stripLeadingEmoji(title)}`;
     clearTimeout(titleResetTimer);
     titleResetTimer = setTimeout(resetTitle, 30000);
   };
