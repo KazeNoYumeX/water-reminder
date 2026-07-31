@@ -41,11 +41,10 @@ for (const key of baseKeys) {
   }
 }
 
-// The tab already shows the favicon and the alert title already prefixes 🔔,
-// so the notify title must be stripped before it becomes document.title.
-// This regressed twice before (6f06eff, e98fca8), hence the guard.
-assert.match(html, /document\.title = `🔔 \$\{stripLeadingEmoji\(title\)\}`/,
-  'document.title must strip the leading emoji from the notify title');
+// The tab already shows the favicon, so the alert title must be plain text:
+// no emoji of its own. This regressed twice before (6f06eff, e98fca8).
+assert.match(html, /document\.title = stripLeadingEmoji\(title\);/,
+  'document.title must be the notify title with its leading emoji stripped');
 for (const loc of locales) {
   for (const key of ['notifyTitle', 'testTitle']) {
     assert.match(I18N[loc][key], /^\p{Extended_Pictographic}\s/u,

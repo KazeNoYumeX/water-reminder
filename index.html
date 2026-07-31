@@ -581,8 +581,8 @@
   };
 
   // Both the system Notification and the browser tab already render an icon
-  // (the notification icon / the favicon), so strip the leading emoji from
-  // the title in both places to avoid stacking droplets next to them.
+  // (the notification icon / the favicon), so the title stays plain text in
+  // both places — the wording alone marks the alert state.
   const stripLeadingEmoji = (s) => s.replace(/^\s*\p{Extended_Pictographic}\s*/u, '');
 
   const notify = (title, body) => {
@@ -600,7 +600,7 @@
     showToast(title, body);
     beep();
     if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
-    document.title = `🔔 ${stripLeadingEmoji(title)}`;
+    document.title = stripLeadingEmoji(title);
     clearTimeout(titleResetTimer);
     titleResetTimer = setTimeout(resetTitle, 30000);
   };
