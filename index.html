@@ -115,6 +115,9 @@
   }
   .mute-toggle input { width: auto; }
 
+  .lang-switch { display: flex; justify-content: flex-end; margin-bottom: 8px; }
+  .lang-switch select { width: auto; font-size: 13px; padding: 4px 8px; }
+
   #toast {
     position: fixed; top: 24px; left: 50%; transform: translateX(-50%);
     background: var(--primary); color: #fff; padding: 16px 24px;
@@ -134,62 +137,69 @@
 </head>
 <body>
 <div class="container">
-  <h1>💧 喝水鬧鐘</h1>
+  <div class="lang-switch">
+    <select id="lang" aria-label="Language">
+      <option value="zh-TW">繁體中文</option>
+      <option value="en">English</option>
+    </select>
+  </div>
+
+  <h1 data-i18n="h1">💧 喝水鬧鐘</h1>
 
   <div class="card">
-    <h2>每日建議飲水量</h2>
+    <h2 data-i18n="cardIntake">每日建議飲水量</h2>
     <div class="row">
       <div class="field">
-        <label for="weight">體重 (kg)</label>
+        <label for="weight" data-i18n="labelWeight">體重 (kg)</label>
         <input type="number" id="weight" min="20" max="200" step="0.1" value="60">
       </div>
       <div class="field">
-        <label for="exercise">運動量</label>
+        <label for="exercise" data-i18n="labelExercise">運動量</label>
         <select id="exercise">
-          <option value="0">無 / 久坐</option>
-          <option value="350" selected>輕度（30 分鐘以內）</option>
-          <option value="600">中度（30–60 分鐘）</option>
-          <option value="900">高度（60 分鐘以上）</option>
+          <option value="0" data-i18n="ex0">無 / 久坐</option>
+          <option value="350" selected data-i18n="ex350">輕度（30 分鐘以內）</option>
+          <option value="600" data-i18n="ex600">中度（30–60 分鐘）</option>
+          <option value="900" data-i18n="ex900">高度（60 分鐘以上）</option>
         </select>
       </div>
     </div>
     <div class="stats">
       <div class="stat-line">
-        <span>建議每日飲水量</span>
+        <span data-i18n="statDaily">建議每日飲水量</span>
         <strong><span id="dailyIntake">—</span> ml</strong>
       </div>
-      <p class="hint">公式：體重 × 30 ml + 運動補水量</p>
+      <p class="hint" data-i18n="hintFormula">公式：體重 × 30 ml + 運動補水量</p>
     </div>
   </div>
 
   <div class="card">
-    <h2>提醒設定</h2>
+    <h2 data-i18n="cardSchedule">提醒設定</h2>
     <div class="row">
       <div class="field">
-        <label for="startTime">開始時間</label>
+        <label for="startTime" data-i18n="labelStart">開始時間</label>
         <input type="time" id="startTime" value="09:00">
       </div>
       <div class="field">
-        <label for="endTime">結束時間</label>
+        <label for="endTime" data-i18n="labelEnd">結束時間</label>
         <input type="time" id="endTime" value="21:00">
       </div>
       <div class="field">
-        <label for="interval">提醒間隔</label>
+        <label for="interval" data-i18n="labelInterval">提醒間隔</label>
         <select id="interval">
-          <option value="30">每 30 分鐘</option>
-          <option value="60" selected>每 1 小時</option>
-          <option value="120">每 2 小時</option>
+          <option value="30" data-i18n="iv30">每 30 分鐘</option>
+          <option value="60" selected data-i18n="iv60">每 1 小時</option>
+          <option value="120" data-i18n="iv120">每 2 小時</option>
         </select>
       </div>
     </div>
 
     <div class="row" style="margin-top: 12px;">
       <div class="field" style="flex: 2;">
-        <label for="phrase">提醒語句</label>
-        <input type="text" id="phrase" value="該喝水了" maxlength="40" placeholder="例如：該喝水了、補水時間到">
+        <label for="phrase" data-i18n="labelPhrase">提醒語句</label>
+        <input type="text" id="phrase" value="該喝水了" maxlength="40" data-i18n-ph="phrasePh" placeholder="例如：該喝水了、補水時間到">
       </div>
       <div class="field">
-        <label for="voice">語音</label>
+        <label for="voice" data-i18n="labelVoice">語音</label>
         <select id="voice"></select>
       </div>
     </div>
@@ -197,40 +207,40 @@
     <div class="row" style="margin-top: 12px;">
       <label class="mute-toggle">
         <input type="checkbox" id="mute">
-        <span>靜音模式（不播放語音與提示音，仍會顯示桌面通知與 toast）</span>
+        <span data-i18n="muteLabel">靜音模式（不播放語音與提示音，仍會顯示桌面通知與 toast）</span>
       </label>
     </div>
 
     <div class="stats">
       <div class="stat-line">
-        <span>今日提醒次數</span>
-        <strong><span id="totalCount">—</span> 次</strong>
+        <span data-i18n="statCount">今日提醒次數</span>
+        <strong><span id="totalCount">—</span> <span data-i18n="unitTimes">次</span></strong>
       </div>
       <div class="stat-line">
-        <span>每次應喝</span>
+        <span data-i18n="statPerDose">每次應喝</span>
         <strong><span id="perDose">—</span> ml</strong>
       </div>
       <div class="stat-line">
-        <span>下次提醒</span>
+        <span data-i18n="statNext">下次提醒</span>
         <strong id="nextTime">—</strong>
       </div>
     </div>
 
     <div style="margin-top: 16px; display: flex; gap: 8px;">
-      <button id="startBtn" style="flex:1;">開始提醒</button>
-      <button id="stopBtn" class="danger" disabled style="flex:1;">停止</button>
+      <button id="startBtn" style="flex:1;" data-i18n="btnStart">開始提醒</button>
+      <button id="stopBtn" class="danger" disabled style="flex:1;" data-i18n="btnStop">停止</button>
     </div>
 
     <div id="status" class="status stopped">尚未啟動</div>
 
     <div class="perm-row">
       <div class="perm-state">
-        通知權限：<span id="permBadge" class="badge default">未授權</span>
+        <span data-i18n="permLabel">通知權限：</span><span id="permBadge" class="badge default">未授權</span>
       </div>
       <button id="permBtn" type="button">授權通知</button>
-      <button id="testBtn" type="button">測試</button>
+      <button id="testBtn" type="button" data-i18n="btnTest">測試</button>
     </div>
-    <p class="hint" id="permHint">提示：macOS 需另外在「系統設定 → 通知」中允許瀏覽器顯示通知，並關閉「專注模式」。</p>
+    <p class="hint" id="permHint" data-i18n="permHint">提示：macOS 需另外在「系統設定 → 通知」中允許瀏覽器顯示通知，並關閉「專注模式」。</p>
 
     <div class="log" id="log"></div>
   </div>
@@ -261,6 +271,137 @@
   const phraseEl = $('phrase');
   const voiceEl = $('voice');
   const muteEl = $('mute');
+  const langEl = $('lang');
+
+  // ---------- i18n ----------
+  // UI only. The TTS voice stays zh-TW (see VOICE_PRIORITY), so the reminder
+  // phrase itself is Chinese in both languages.
+  const I18N = {
+    'zh-TW': {
+      appTitle: '喝水鬧鐘',
+      h1: '💧 喝水鬧鐘',
+      cardIntake: '每日建議飲水量',
+      labelWeight: '體重 (kg)',
+      labelExercise: '運動量',
+      ex0: '無 / 久坐',
+      ex350: '輕度（30 分鐘以內）',
+      ex600: '中度（30–60 分鐘）',
+      ex900: '高度（60 分鐘以上）',
+      statDaily: '建議每日飲水量',
+      hintFormula: '公式：體重 × 30 ml + 運動補水量',
+      cardSchedule: '提醒設定',
+      labelStart: '開始時間',
+      labelEnd: '結束時間',
+      labelInterval: '提醒間隔',
+      iv30: '每 30 分鐘',
+      iv60: '每 1 小時',
+      iv120: '每 2 小時',
+      labelPhrase: '提醒語句',
+      phrasePh: '例如：該喝水了、補水時間到',
+      labelVoice: '語音',
+      voiceAuto: '自動挑選',
+      muteLabel: '靜音模式（不播放語音與提示音，仍會顯示桌面通知與 toast）',
+      statCount: '今日提醒次數',
+      unitTimes: '次',
+      statPerDose: '每次應喝',
+      statNext: '下次提醒',
+      btnStart: '開始提醒',
+      btnStop: '停止',
+      btnTest: '測試',
+      btnPerm: '授權通知',
+      btnPermBlocked: '已被封鎖',
+      permLabel: '通知權限：',
+      permGranted: '已授權',
+      permDenied: '已封鎖',
+      permDefault: '未授權',
+      permUnsupported: '不支援',
+      permHint: '提示：macOS 需另外在「系統設定 → 通知」中允許瀏覽器顯示通知，並關閉「專注模式」。',
+      statusIdle: '尚未啟動',
+      statusRunning: '運行中…請保持此分頁開啟',
+      statusStopped: '已停止',
+      statusDone: '今日所有提醒已完成',
+      alertBlocked: '通知已被瀏覽器封鎖。\n請點網址列左側的鎖頭圖示 → 通知 → 允許，再重新整理頁面。',
+      alertTimeOrder: '結束時間需晚於開始時間',
+      logNoPerm: '未授權通知，將僅以聲音 / 頁面提醒（可按「授權通知」開啟）',
+      logStarted: '已啟動，今日剩 {remaining} / {total} 次提醒',
+      logStopped: '已手動停止',
+      logReminder: '提醒：{time} 喝 {ml} ml',
+      logRolled: '今日完成，已自動排定明日 {count} 次提醒',
+      logAllDone: '今日提醒全部完成',
+      logRebuilt: '設定已變更，重建排程：剩 {count} 次',
+      logInvalid: '設定無效（結束時間需晚於開始時間），已停止',
+      nextDone: '今日已結束',
+      notifyTitle: '💧 該喝水囉！',
+      notifyBody: '這個時段請喝 {ml} ml',
+      testTitle: '💧 測試通知',
+      testBody: '若你看不到系統通知，請檢查瀏覽器與 macOS 設定',
+    },
+    en: {
+      appTitle: 'Water Reminder',
+      h1: '💧 Water Reminder',
+      cardIntake: 'Daily water intake',
+      labelWeight: 'Weight (kg)',
+      labelExercise: 'Activity level',
+      ex0: 'None / sedentary',
+      ex350: 'Light (under 30 min)',
+      ex600: 'Moderate (30–60 min)',
+      ex900: 'Heavy (over 60 min)',
+      statDaily: 'Suggested daily intake',
+      hintFormula: 'Formula: weight × 30 ml + exercise bonus',
+      cardSchedule: 'Reminder settings',
+      labelStart: 'Start time',
+      labelEnd: 'End time',
+      labelInterval: 'Interval',
+      iv30: 'Every 30 minutes',
+      iv60: 'Every hour',
+      iv120: 'Every 2 hours',
+      labelPhrase: 'Reminder phrase (spoken in Chinese)',
+      phrasePh: 'e.g. 該喝水了 — the voice is Chinese',
+      labelVoice: 'Voice',
+      voiceAuto: 'Auto-select',
+      muteLabel: 'Mute (no speech or beep; desktop notification and toast still show)',
+      statCount: "Today's reminders",
+      unitTimes: 'times',
+      statPerDose: 'Per reminder',
+      statNext: 'Next reminder',
+      btnStart: 'Start',
+      btnStop: 'Stop',
+      btnTest: 'Test',
+      btnPerm: 'Enable notifications',
+      btnPermBlocked: 'Blocked',
+      permLabel: 'Notification permission: ',
+      permGranted: 'Granted',
+      permDenied: 'Blocked',
+      permDefault: 'Not granted',
+      permUnsupported: 'Unsupported',
+      permHint: 'Tip: on macOS you also need to allow browser notifications in System Settings → Notifications, and turn off Focus mode.',
+      statusIdle: 'Not started',
+      statusRunning: 'Running — keep this tab open',
+      statusStopped: 'Stopped',
+      statusDone: "All of today's reminders are done",
+      alertBlocked: 'Notifications are blocked by your browser.\nClick the lock icon in the address bar → Notifications → Allow, then reload the page.',
+      alertTimeOrder: 'End time must be later than start time',
+      logNoPerm: 'Notifications not granted — sound / in-page reminders only (click "Enable notifications" to turn them on)',
+      logStarted: 'Started — {remaining} of {total} reminders left today',
+      logStopped: 'Stopped manually',
+      logReminder: 'Reminder: {time} — drink {ml} ml',
+      logRolled: "Today's done — scheduled {count} reminders for tomorrow",
+      logAllDone: "All of today's reminders completed",
+      logRebuilt: 'Settings changed — schedule rebuilt, {count} left',
+      logInvalid: 'Invalid settings (end time must be later than start time) — stopped',
+      nextDone: 'Done for today',
+      notifyTitle: '💧 Time to drink water!',
+      notifyBody: 'Drink {ml} ml now',
+      testTitle: '💧 Test notification',
+      testBody: "If you don't see a system notification, check your browser and OS settings",
+    },
+  };
+
+  let lang = /^zh/i.test(navigator.language || '') ? 'zh-TW' : 'en';
+  const t = (key, params) => {
+    const s = I18N[lang][key] ?? key;
+    return params ? s.replace(/\{(\w+)\}/g, (_, k) => params[k]) : s;
+  };
 
   const STORAGE_KEY = 'water-reminder-settings';
   const POLL_INTERVAL_MS = 20000;
@@ -321,16 +462,16 @@
   // ---------- notification ----------
   const updatePermBadge = () => {
     if (!('Notification' in window)) {
-      permBadge.textContent = '不支援';
+      permBadge.textContent = t('permUnsupported');
       permBadge.className = 'badge denied';
       permBtn.disabled = true;
       return;
     }
     const p = Notification.permission;
     permBadge.className = `badge ${p}`;
-    permBadge.textContent = p === 'granted' ? '已授權' : p === 'denied' ? '已封鎖' : '未授權';
+    permBadge.textContent = p === 'granted' ? t('permGranted') : p === 'denied' ? t('permDenied') : t('permDefault');
     permBtn.disabled = p === 'granted';
-    permBtn.textContent = p === 'denied' ? '已被封鎖' : '授權通知';
+    permBtn.textContent = p === 'denied' ? t('btnPermBlocked') : t('btnPerm');
   };
 
   const requestPerm = async () => {
@@ -338,7 +479,7 @@
     if (Notification.permission === 'default') {
       await Notification.requestPermission();
     } else if (Notification.permission === 'denied') {
-      alert('通知已被瀏覽器封鎖。\n請點網址列左側的鎖頭圖示 → 通知 → 允許，再重新整理頁面。');
+      alert(t('alertBlocked'));
     }
     updatePermBadge();
   };
@@ -384,7 +525,7 @@
     const voices = speechSynthesis.getVoices().filter((v) => /^zh/i.test(v.lang));
     if (voices.length === 0) return;
     const saved = voiceEl.value;
-    voiceEl.innerHTML = '<option value="">自動挑選</option>'
+    voiceEl.innerHTML = `<option value="">${t('voiceAuto')}</option>`
       + voices.map((v) => `<option value="${v.voiceURI}">${v.name} (${v.lang})</option>`).join('');
     if (saved) voiceEl.value = saved;
   };
@@ -431,13 +572,12 @@
     } catch (e) { /* ignore */ }
   };
 
-  const DEFAULT_TITLE = '喝水鬧鐘';
   let titleResetTimer = null;
 
   const resetTitle = () => {
     clearTimeout(titleResetTimer);
     titleResetTimer = null;
-    document.title = DEFAULT_TITLE;
+    document.title = t('appTitle');
   };
 
   // System Notification already renders the icon, so strip the leading
@@ -478,14 +618,14 @@
   // been fired yet. Missed reminders during sleep fire on the next tick.
   const tick = () => {
     const now = new Date();
-    const due = scheduleList.find((t) => t <= now && !firedKeys.has(keyOf(t)));
+    const due = scheduleList.find((d) => d <= now && !firedKeys.has(keyOf(d)));
     if (due) {
       firedKeys.add(keyOf(due));
       const perDose = perDoseEl.textContent;
-      notify('💧 該喝水囉！', `這個時段請喝 ${perDose} ml`);
-      log(`提醒：${fmtTime(due)} 喝 ${perDose} ml`);
+      notify(t('notifyTitle'), t('notifyBody', { ml: perDose }));
+      log(t('logReminder', { time: fmtTime(due), ml: perDose }));
     }
-    const upcoming = scheduleList.find((t) => t > now && !firedKeys.has(keyOf(t)));
+    const upcoming = scheduleList.find((d) => d > now && !firedKeys.has(keyOf(d)));
     if (upcoming) {
       nextTimeEl.textContent = fmtTime(upcoming);
     } else if (firedKeys.size >= scheduleList.length) {
@@ -498,15 +638,14 @@
         scheduleList = nextDay;
         firedKeys = new Set();
         nextTimeEl.textContent = fmtTime(scheduleList[0]);
-        log(`今日完成，已自動排定明日 ${scheduleList.length} 次提醒`);
+        log(t('logRolled', { count: scheduleList.length }));
       } else {
-        nextTimeEl.textContent = '今日已結束';
-        statusEl.className = 'status stopped';
-        statusEl.textContent = '今日所有提醒已完成';
+        nextTimeEl.textContent = t('nextDone');
+        setStatus('stopped', 'statusDone');
         stopBtn.disabled = true;
         startBtn.disabled = false;
         if (pollerId) { clearInterval(pollerId); pollerId = null; }
-        log('今日提醒全部完成');
+        log(t('logAllDone'));
       }
     }
   };
@@ -527,11 +666,11 @@
     refreshStats();
     scheduleList = buildSchedule();
     if (scheduleList.length === 0) {
-      alert('結束時間需晚於開始時間');
+      alert(t('alertTimeOrder'));
       return;
     }
     if ('Notification' in window && Notification.permission !== 'granted') {
-      log('未授權通知，將僅以聲音 / 頁面提醒（可按「授權通知」開啟）');
+      log(t('logNoPerm'));
     }
     primeTTS();
     saveSettings();
@@ -539,13 +678,12 @@
     // when the user starts mid-day (e.g. starting at 17:23 shouldn't replay
     // 09:00, 10:00 …). Same approach as rebuildIfRunning().
     const now = new Date();
-    firedKeys = new Set(scheduleList.filter((t) => t <= now).map(keyOf));
+    firedKeys = new Set(scheduleList.filter((d) => d <= now).map(keyOf));
     const remaining = scheduleList.length - firedKeys.size;
     startBtn.disabled = true;
     stopBtn.disabled = false;
-    statusEl.className = 'status running';
-    statusEl.textContent = '運行中…請保持此分頁開啟';
-    log(`已啟動，今日剩 ${remaining} / ${scheduleList.length} 次提醒`);
+    setStatus('running', 'statusRunning');
+    log(t('logStarted', { remaining, total: scheduleList.length }));
     tick();
     if (pollerId) clearInterval(pollerId);
     pollerId = setInterval(tick, POLL_INTERVAL_MS);
@@ -555,10 +693,9 @@
     if (pollerId) { clearInterval(pollerId); pollerId = null; }
     startBtn.disabled = false;
     stopBtn.disabled = true;
-    statusEl.className = 'status stopped';
-    statusEl.textContent = '已停止';
+    setStatus('stopped', 'statusStopped');
     nextTimeEl.textContent = '—';
-    log('已手動停止');
+    log(t('logStopped'));
   };
 
   // Rebuild the active schedule when the user changes startTime/endTime/
@@ -569,21 +706,44 @@
     if (!pollerId) return;
     const next = buildSchedule();
     if (next.length === 0) {
-      log('設定無效（結束時間需晚於開始時間），已停止');
+      log(t('logInvalid'));
       stop();
       return;
     }
     const now = new Date();
     scheduleList = next;
-    firedKeys = new Set(scheduleList.filter((t) => t <= now).map(keyOf));
-    const upcoming = scheduleList.find((t) => t > now);
-    nextTimeEl.textContent = upcoming ? fmtTime(upcoming) : '今日已結束';
-    log(`設定已變更，重建排程：剩 ${scheduleList.length - firedKeys.size} 次`);
+    firedKeys = new Set(scheduleList.filter((d) => d <= now).map(keyOf));
+    const upcoming = scheduleList.find((d) => d > now);
+    nextTimeEl.textContent = upcoming ? fmtTime(upcoming) : t('nextDone');
+    log(t('logRebuilt', { count: scheduleList.length - firedKeys.size }));
+  };
+
+  // ---------- i18n rendering ----------
+  // The status line is the only element whose text depends on runtime state,
+  // so remember its key and re-render it when the language changes.
+  let statusKey = 'statusIdle';
+  const setStatus = (cls, key) => {
+    statusKey = key;
+    statusEl.className = `status ${cls}`;
+    statusEl.textContent = t(key);
+  };
+
+  const applyI18n = () => {
+    document.documentElement.lang = lang;
+    langEl.value = lang;
+    if (!titleResetTimer) document.title = t('appTitle');
+    document.querySelectorAll('[data-i18n]').forEach((el) => { el.textContent = t(el.dataset.i18n); });
+    document.querySelectorAll('[data-i18n-ph]').forEach((el) => { el.placeholder = t(el.dataset.i18nPh); });
+    statusEl.textContent = t(statusKey);
+    updatePermBadge();
+    if ('speechSynthesis' in window) populateVoiceList();
+    if (pollerId) tick();  // refresh "next reminder" wording without waiting a poll
   };
 
   // ---------- persistence ----------
   const saveSettings = () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      lang,
       weight: weightEl.value,
       exercise: exerciseEl.value,
       startTime: startTimeEl.value,
@@ -600,6 +760,7 @@
       const raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return;
       const s = JSON.parse(raw);
+      if (I18N[s.lang]) lang = s.lang;
       if (s.weight) weightEl.value = s.weight;
       if (s.exercise) exerciseEl.value = s.exercise;
       if (s.startTime) startTimeEl.value = s.startTime;
@@ -623,16 +784,21 @@
     el.addEventListener('input', refreshStats);
   });
   [phraseEl, voiceEl, muteEl].forEach((el) => el.addEventListener('change', saveSettings));
+  langEl.addEventListener('change', () => {
+    lang = langEl.value;
+    applyI18n();
+    saveSettings();
+  });
   startBtn.addEventListener('click', start);
   stopBtn.addEventListener('click', stop);
   permBtn.addEventListener('click', requestPerm);
   testBtn.addEventListener('click', () => {
-    notify('💧 測試通知', '若你看不到系統通知，請檢查瀏覽器與 macOS 設定');
+    notify(t('testTitle'), t('testBody'));
   });
 
   loadSettings();
+  applyI18n();
   refreshStats();
-  updatePermBadge();
 
   if ('speechSynthesis' in window) {
     populateVoiceList();

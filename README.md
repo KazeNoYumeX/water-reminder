@@ -8,10 +8,11 @@
 
 Or download this repo and open `index.html` in your browser.
 
-> Note: the UI and voice prompts are in Traditional Chinese.
+> Note: the UI is available in English and Traditional Chinese; the spoken reminder is Chinese (zh-TW) only.
 
 ## Features
 
+- **Bilingual UI**: switch between English and 繁體中文 with the selector at the top — remembered across visits, and switchable while reminders are running. The TTS voice stays zh-TW, so the reminder phrase itself is Chinese.
 - **Daily water intake calculator**: enter your weight and activity level to get your daily target
   - Formula: `weight(kg) × 30 ml + exercise bonus`
   - Exercise bonus: none 0 ml / light 350 ml / moderate 600 ml / heavy 900 ml
